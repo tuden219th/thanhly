@@ -70,18 +70,76 @@ export default function Home() {
       </header>
 
       <div className="mx-auto max-w-6xl px-5 py-10">
-        <section className="mb-10">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#c96a2b]">
-            Thanh lý minh bạch
-          </p>
+        <section className="relative isolate mb-12 overflow-hidden rounded-[2rem] bg-[#25231f] p-6 text-white shadow-xl sm:p-9 lg:p-10">
+          <div
+            aria-hidden="true"
+            className="absolute -right-20 -top-28 -z-10 h-80 w-80 rounded-full bg-[#c96a2b]/35 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute -bottom-36 left-1/3 -z-10 h-72 w-72 rounded-full bg-[#f0a35e]/15 blur-3xl"
+          />
 
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Đồ tốt, giá hợp lý.
-          </h1>
+          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-12">
+            <div>
+              <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-orange-100">
+                <span aria-hidden="true">✦</span> Thanh lý minh bạch · Nghĩa Đô
+              </p>
 
-          <p className="mt-3 text-neutral-500">
-            Danh sách đồ thanh lý được cập nhật trực tiếp.
-          </p>
+              <h1 className="mt-5 max-w-xl text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+                Đồ tốt, giá hợp lý.
+                <span className="mt-1 block text-[#ffc28e]">Gọi là có người hỗ trợ!</span>
+              </h1>
+
+              <p className="mt-4 max-w-lg text-sm leading-6 text-white/70 sm:text-base">
+                Danh sách đồ thanh lý được cập nhật trực tiếp. Gọi cho Từ Đến để hỏi nhanh về sản phẩm hoặc ghé cửa hàng xem tận nơi.
+              </p>
+
+              <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                <a
+                  href="tel:0988242921"
+                  className="group flex min-h-16 items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 transition hover:border-[#ffc28e]/70 hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ffc28e]"
+                >
+                  <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#c96a2b] text-lg">☎</span>
+                  <span>
+                    <span className="block text-xs font-medium text-white/60">Gọi tư vấn</span>
+                    <span className="mt-0.5 block font-bold tracking-wide">0988 242 921</span>
+                  </span>
+                </a>
+                <a
+                  href="tel:0972516250"
+                  className="group flex min-h-16 items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 transition hover:border-[#ffc28e]/70 hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ffc28e]"
+                >
+                  <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#c96a2b] text-lg">☎</span>
+                  <span>
+                    <span className="block text-xs font-medium text-white/60">Hoặc gọi</span>
+                    <span className="mt-0.5 block font-bold tracking-wide">0972 516 250</span>
+                  </span>
+                </a>
+              </div>
+            </div>
+
+            <div className="rounded-[1.5rem] border border-white/10 bg-white p-5 text-[#24231f] shadow-lg sm:p-6">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#c96a2b]">
+                📍 Địa chỉ cửa hàng
+              </p>
+              <p className="mt-3 text-xl font-bold leading-snug sm:text-2xl">
+                219 Tô Hiệu, Nghĩa Đô, Hà Nội
+              </p>
+              <a
+                href="https://www.google.com/maps/search/?api=1&query=219%20T%C3%B4%20Hi%E1%BB%87u%2C%20Ngh%C4%A9a%20%C4%90%C3%B4%2C%20H%C3%A0%20N%E1%BB%99i"
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#fff2e7] px-4 py-2.5 text-sm font-bold text-[#a94f1f] transition hover:bg-[#ffe4cf] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c96a2b]"
+              >
+                Mở bản đồ <span aria-hidden="true">↗</span>
+              </a>
+              <div className="mt-5 border-t border-neutral-200 pt-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Địa chỉ cũ</p>
+                <p className="mt-1 text-sm text-neutral-600">Dịch Vọng, Cầu Giấy, Hà Nội</p>
+              </div>
+            </div>
+          </div>
         </section>
 
         <section>
