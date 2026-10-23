@@ -13,6 +13,7 @@ type Product = {
   description: string;
   image_url: string | null;
   created_at: string;
+  stock_quantity: number | null;
 };
 
 export default function Home() {
@@ -31,14 +32,16 @@ export default function Home() {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id, product_code, name, price, description, image_url, created_at"
+          "id, product_code, name, price, description, image_url, created_at, stock_quantity"
         )
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
 
       if (error) {
         console.error("Lỗi tải danh sách sản phẩm:", error);
-        setError("Chưa tải được danh sách sản phẩm. Vui lòng thử tải lại trang.");
+        setError(
+          "Chưa tải được danh sách sản phẩm. Vui lòng thử tải lại trang."
+        );
       } else {
         setProducts((data || []) as Product[]);
       }
@@ -56,6 +59,7 @@ export default function Home() {
           <Link href="/" className="text-xl font-bold tracking-tight">
             <span className="text-[#c96a2b]">Từ Đến</span> Thanh Lý
           </Link>
+
           <Link
             href="/quanly/login"
             className="text-sm text-neutral-500 transition hover:text-[#c96a2b]"
@@ -70,9 +74,11 @@ export default function Home() {
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#c96a2b]">
             Thanh lý minh bạch
           </p>
+
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             Đồ tốt, giá hợp lý.
           </h1>
+
           <p className="mt-3 text-neutral-500">
             Danh sách đồ thanh lý được cập nhật trực tiếp.
           </p>
@@ -81,6 +87,7 @@ export default function Home() {
         <section>
           <div className="mb-6">
             <h2 className="text-2xl font-semibold">Sản phẩm thanh lý</h2>
+
             <p className="mt-1 text-sm text-neutral-500">
               {loading ? "Đang tải sản phẩm..." : `${products.length} sản phẩm`}
             </p>
@@ -93,6 +100,7 @@ export default function Home() {
           ) : error ? (
             <div className="rounded-2xl border border-red-200 bg-white py-12 text-center">
               <p className="text-sm text-red-700">{error}</p>
+
               <button
                 onClick={() => window.location.reload()}
                 className="mt-4 rounded-xl border border-neutral-200 px-4 py-2 text-sm hover:border-[#c96a2b]"
@@ -123,17 +131,29 @@ export default function Home() {
                     ) : (
                       <span className="text-4xl text-neutral-300">◇</span>
                     )}
-
-                    
                   </div>
 
                   <div className="p-3">
                     <p className="line-clamp-2 min-h-10 text-sm font-medium">
                       {product.name}
                     </p>
+ 
                     <p className="mt-1 font-bold text-[#c96a2b]">
                       {money(Number(product.price))}
                     </p>
+ 
+                    <p
+                      className={`mt-2 text-xs font-medium ${
+                        Number(product.stock_quantity ?? 0) > 0
+                          ? "text-emerald-700"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {Number(product.stock_quantity ?? 0) > 0
+                        ? `Còn ${Number(product.stock_quantity ?? 0)} sản phẩm`
+                        : "Hết hàng"}
+                    </p>
+ 
                     {product.description && (
                       <p className="mt-2 line-clamp-3 text-xs leading-5 text-neutral-500">
                         {product.description}
