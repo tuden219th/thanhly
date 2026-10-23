@@ -1,6 +1,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -12,11 +13,38 @@ type Product = {
   price: number;
   description: string;
   image_url: string | null;
+  created_at?: string;
+  updated_at?: string;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
 };
 
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
 const MAX_ORIGINAL_SIZE = 25 * 1024 * 1024;
 const MAX_IMAGE_DIMENSION = 1600;
+const DELETE_BACKUP_WINDOW_MS = 48 * 60 * 60 * 1000;
+const productSelect =
+  "id, product_code, name, price, description, image_url, created_at, updated_at, deleted_at, deleted_by";
+
+function formatRemainingTime(deletedAt: string): string {
+  const deletedAtMs = new Date(deletedAt).getTime();
+  const remainingMs = deletedAtMs + DELETE_BACKUP_WINDOW_MS - Date.now();
+
+  if (remainingMs <= 0) {
+   return "Đã hết hạn";
+  }
+
+  const hours = Math.floor(remainingMs / (60 * 60 * 1000));
+  const minutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+
+  if (hours > 24) {
+   const days = Math.floor(hours / 24);
+   const remainingHours = hours % 24;
+   return `${days} ngày ${remainingHours} giờ còn lại`;
+  }
+
+  return `${hours} giờ ${minutes} phút còn lại`;
+}
 
 function compressImage(file: File): Promise<File> {
   return new Promise((resolve, reject) => {
@@ -134,6 +162,7 @@ export default function ManagePage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletedProducts, setDeletedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -144,7 +173,8 @@ export default function ManagePage() {
   async function loadProducts() {
     const { data, error } = await supabase
       .from("products")
-      .select("*")
+      .select(productSelect)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -152,7 +182,19 @@ export default function ManagePage() {
       return;
     }
 
+    const { data: deletedData, error: deletedError } = await supabase
+      .from("products")
+      .select(productSelect)
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false });
+
+    if (deletedError) {
+      setMessage("Không tải được danh sách sản phẩm đã xóa: " + deletedError.message);
+      return;
+    }
+
     setProducts((data || []) as Product[]);
+    setDeletedProducts((deletedData || []) as Product[]);
   }
 
   useEffect(() => {
@@ -348,6 +390,99 @@ export default function ManagePage() {
     }
   }
 
+  async function deleteProduct(product: Product) {
+    const confirmed = window.confirm(
+      `Bạn có chắc chắn muốn xóa "${product.name}"? Sản phẩm sẽ được giữ trong kho lưu trữ trong 48 giờ và có thể khôi phục lại.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const { error } = await supabase
+        .from("products")
+        .update({
+          deleted_at: new Date().toISOString(),
+          deleted_by: (await supabase.auth.getSession()).data.session?.user?.id ?? null,
+        })
+        .eq("id", product.id)
+        .is("deleted_at", null);
+
+      if (error) {
+        throw error;
+      }
+
+      if (editingId === product.id) {
+        resetForm();
+      }
+
+      await loadProducts();
+      setMessage("Đã xóa sản phẩm. Bạn còn 48 giờ để khôi phục.");
+    } catch (error: unknown) {
+      console.error("Lỗi xóa sản phẩm:", error);
+      const detail =
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+            ? error
+            : "Không xác định được nguyên nhân.";
+
+      setMessage("Không xóa được sản phẩm: " + detail);
+    }
+  }
+
+  async function restoreProduct(product: Product) {
+    if (!product.deleted_at) {
+      setMessage("Sản phẩm này không nằm trong danh sách đã xóa.");
+      return;
+    }
+
+    const deletedAtMs = new Date(product.deleted_at).getTime();
+    const nowMs = new Date().getTime();
+    if (Number.isNaN(deletedAtMs) || deletedAtMs + DELETE_BACKUP_WINDOW_MS <= nowMs) {
+      const { error } = await supabase
+        .from("products")
+        .update({ deleted_at: null, deleted_by: null })
+        .eq("id", product.id)
+        .not("deleted_at", "is", null);
+
+      if (error) {
+        console.error("Lỗi khi cập nhật backup hết hạn:", error);
+      }
+      await loadProducts();
+      setMessage("Backup đã hết hạn và không còn khả dụng để khôi phục.");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("products")
+        .update({
+          deleted_at: null,
+          deleted_by: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", product.id)
+        .not("deleted_at", "is", null);
+
+      if (error) {
+        throw error;
+      }
+
+      await loadProducts();
+      setMessage("Đã khôi phục sản phẩm thành công.");
+    } catch (error: unknown) {
+      console.error("Lỗi khôi phục sản phẩm:", error);
+      const detail =
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+            ? error
+            : "Không xác định được nguyên nhân.";
+
+      setMessage("Không khôi phục được sản phẩm: " + detail);
+    }
+  }
+
   async function logout() {
     await supabase.auth.signOut();
     router.replace("/quanly/login");
@@ -365,17 +500,17 @@ export default function ManagePage() {
     <main className="min-h-screen bg-[#f7f6f3] text-[#24231f]">
       <header className="border-b border-black/5 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-5">
-          <a href="/" className="text-xl font-bold tracking-tight">
+          <Link href="/" className="text-xl font-bold tracking-tight">
             <span className="text-[#c96a2b]">Từ Đến</span> Thanh Lý
-          </a>
+          </Link>
 
           <div className="flex items-center gap-3">
-            <a
+            <Link
               href="/"
               className="text-sm text-neutral-600 hover:text-[#c96a2b]"
             >
               Xem website
-            </a>
+            </Link>
             <button
               onClick={logout}
               className="rounded-lg border border-neutral-200 px-3 py-2 text-sm"
@@ -510,7 +645,63 @@ export default function ManagePage() {
           )}
         </section>
 
-        <section>
+            {deletedProducts.length > 0 && (
+              <section className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-amber-900">
+                      Sản phẩm đã xóa
+                    </h2>
+                    <p className="mt-1 text-sm text-amber-800/80">
+                      Có thể khôi phục trong 48 giờ kể từ thời điểm xóa. Sau đó sẽ bị xoá khỏi hệ thống.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {deletedProducts.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        {item.image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={item.image_url}
+                            alt={item.name}
+                            className="h-14 w-14 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-neutral-100 text-xl text-neutral-300">
+                            ◇
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium text-neutral-800">{item.name}</p>
+                          <p className="text-xs text-neutral-500">
+                            Xóa lúc: {item.deleted_at ? new Date(item.deleted_at).toLocaleString("vi-VN") : "Chưa rõ"}
+                          </p>
+                          <p className="text-xs text-amber-700">
+                            {item.deleted_at ? formatRemainingTime(item.deleted_at) : "Đã hết hạn"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => restoreProduct(item)}
+                        className="rounded-lg border border-[#c96a2b] bg-[#fff7f1] px-3 py-2 text-sm font-medium text-[#c96a2b] transition hover:bg-[#fef0e1]"
+                      >
+                        Khôi phục
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <section>
           <div className="mb-5">
             <h2 className="text-2xl font-semibold">
               Danh sách sản phẩm
@@ -558,6 +749,13 @@ export default function ManagePage() {
                       className="mt-3 w-full rounded-lg border border-neutral-200 py-2 text-sm hover:border-[#c96a2b]"
                     >
                       Chỉnh sửa
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteProduct(product)}
+                      className="mt-2 w-full rounded-lg border border-red-200 bg-red-50 py-2 text-sm font-medium text-red-600 transition hover:border-red-300 hover:bg-red-100"
+                    >
+                      Xóa
                     </button>
                   </div>
                 </article>

@@ -1,6 +1,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -32,6 +33,7 @@ export default function Home() {
         .select(
           "id, product_code, name, price, description, image_url, created_at"
         )
+        .is("deleted_at", null)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -51,15 +53,15 @@ export default function Home() {
     <main className="min-h-screen bg-[#f7f6f3] text-[#24231f]">
       <header className="border-b border-black/5 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
-          <a href="/" className="text-xl font-bold tracking-tight">
+          <Link href="/" className="text-xl font-bold tracking-tight">
             <span className="text-[#c96a2b]">Từ Đến</span> Thanh Lý
-          </a>
-          <a
+          </Link>
+          <Link
             href="/quanly/login"
             className="text-sm text-neutral-500 transition hover:text-[#c96a2b]"
           >
             Quản lý
-          </a>
+          </Link>
         </div>
       </header>
 

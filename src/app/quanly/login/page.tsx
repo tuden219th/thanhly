@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -38,9 +39,9 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#f7f6f3] px-5 py-10 text-[#24231f]">
       <section className="w-full max-w-md rounded-2xl border border-black/5 bg-white p-7 shadow-sm sm:p-9">
-        <a href="/" className="text-xl font-bold tracking-tight">
+        <Link href="/" className="text-xl font-bold tracking-tight">
           <span className="text-[#c96a2b]">Từ Đến</span> Thanh Lý
-        </a>
+        </Link>
 
         <p className="mt-8 text-sm font-semibold uppercase tracking-[0.2em] text-[#c96a2b]">
           Khu vực quản lý
@@ -99,12 +100,12 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <a
+        <Link
           href="/"
           className="mt-6 block text-center text-sm text-neutral-500 hover:text-[#c96a2b]"
         >
           ← Quay lại trang chủ
-        </a>
+        </Link>
       </section>
     </main>
   );
