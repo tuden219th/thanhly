@@ -95,27 +95,43 @@ export default function Home() {
                 Danh sách đồ thanh lý được cập nhật trực tiếp. Gọi cho Từ Đến để hỏi nhanh về sản phẩm hoặc ghé cửa hàng xem tận nơi.
               </p>
 
-              <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                <a
-                  href="tel:0988242921"
-                  className="group flex min-h-16 items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 transition hover:border-[#ffc28e]/70 hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ffc28e]"
-                >
-                  <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#c96a2b] text-lg">☎</span>
-                  <span>
-                    <span className="block text-xs font-medium text-white/60">Gọi tư vấn</span>
-                    <span className="mt-0.5 block font-bold tracking-wide">0988 242 921</span>
-                  </span>
-                </a>
-                <a
-                  href="tel:0972516250"
-                  className="group flex min-h-16 items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 transition hover:border-[#ffc28e]/70 hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ffc28e]"
-                >
-                  <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#c96a2b] text-lg">☎</span>
-                  <span>
-                    <span className="block text-xs font-medium text-white/60">Hoặc gọi</span>
-                    <span className="mt-0.5 block font-bold tracking-wide">0972 516 250</span>
-                  </span>
-                </a>
+              <div className="mt-7 grid gap-4 sm:grid-cols-2">
+                {[
+                  { branch: "Nhánh 1", phone: "0988 242 921", digits: "0988242921" },
+                  { branch: "Nhánh 2", phone: "0972 516 250", digits: "0972516250" },
+                ].map(({ branch, phone, digits }) => (
+                  <div key={digits} className="rounded-2xl border border-white/15 bg-white/10 p-3">
+                    <p className="mb-2 px-1 text-xs font-bold uppercase tracking-[0.14em] text-white/65">
+                      {branch}
+                    </p>
+                    <a
+                      href={`https://zalo.me/${digits}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Nhắn Zalo đến số ${phone}`}
+                      className="group flex min-h-16 items-center gap-3 rounded-xl bg-[#1684ff] px-4 py-3 text-white shadow-lg shadow-blue-950/20 transition hover:bg-[#0875ed] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                    >
+                      <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-[#1684ff] shadow-sm">
+                        <svg viewBox="0 0 40 40" className="h-9 w-9" fill="none">
+                          <path d="M20 5.5c-8.3 0-15 5.4-15 12.1 0 3.8 2.3 7.2 5.9 9.4l-.9 5.5 6-3.1c1.3.3 2.6.4 4 .4 8.3 0 15-5.4 15-12.1S28.3 5.5 20 5.5Z" fill="currentColor" />
+                          <text x="20" y="21.5" textAnchor="middle" fill="white" fontSize="8" fontWeight="800" fontFamily="Arial, sans-serif">Zalo</text>
+                        </svg>
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-xs font-medium text-white/80">Tư vấn liên hệ</span>
+                        <span className="mt-0.5 block text-lg font-extrabold tracking-wide">Zalo</span>
+                      </span>
+                      <span aria-hidden="true" className="ml-auto text-xl transition-transform group-hover:translate-x-1">↗</span>
+                    </a>
+                    <a
+                      href={`tel:${digits}`}
+                      className="mt-2 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-white/75 transition hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ffc28e]"
+                    >
+                      <span aria-hidden="true">☎</span>
+                      Gọi {phone}
+                    </a>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -202,14 +218,18 @@ export default function Home() {
  
                     <p
                       className={`mt-2 text-xs font-medium ${
-                        Number(product.stock_quantity ?? 0) > 0
-                          ? "text-emerald-700"
-                          : "text-red-600"
+                        product.stock_quantity === null
+                          ? "text-neutral-500"
+                          : product.stock_quantity > 0
+                            ? "text-emerald-700"
+                            : "text-red-600"
                       }`}
                     >
-                      {Number(product.stock_quantity ?? 0) > 0
-                        ? `Còn ${Number(product.stock_quantity ?? 0)} sản phẩm`
-                        : "Hết hàng"}
+                      {product.stock_quantity === null
+                        ? "Chưa xác minh tồn kho"
+                        : product.stock_quantity > 0
+                          ? `Còn ${product.stock_quantity} sản phẩm`
+                          : "Hết hàng"}
                     </p>
  
                     {product.description && (

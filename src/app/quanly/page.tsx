@@ -917,6 +917,18 @@ export default function ManagePage() {
 
             </Link>
 
+            <Link
+
+              href="/quanly/tin-nhan"
+
+              className="rounded-lg border border-[#c96a2b]/25 bg-[#fffaf6] px-3 py-2 text-sm font-semibold text-[#a94f1f] hover:bg-[#fff2e7]"
+
+            >
+
+              Hộp thư tư vấn
+
+            </Link>
+
             <button
 
               onClick={logout}

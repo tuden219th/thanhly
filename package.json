@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:chat-security": "node --test tests/chat-security.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
