@@ -71,6 +71,9 @@ export const metadata: Metadata = {
     shortcut: "/icon.svg",
     apple: "/icon.svg",
   },
+  verification: {
+    google: "zDnk6b-DpF_qB1RRhoWkx4u0csbAvkhAK9VKaf0SdL0",
+  },
 };
 
 export const viewport = {
