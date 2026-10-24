@@ -133,6 +133,7 @@ export default function ChatWidget() {
   const [sessionStorageReady, setSessionStorageReady] = useState(false);
   const activeSessionId = useRef<string | null>(null);
   const sessionStorageKey = "thanhly-chat-session-v1";
+  const messageListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const restoreTimer = window.setTimeout(() => {
@@ -172,6 +173,12 @@ export default function ChatWidget() {
     }
   }, [session, sessionStorageReady]);
 
+  useEffect(() => {
+    if (!open || !mode) return;
+    const list = messageListRef.current;
+    if (list) list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
+  }, [messages, mode, open]);
+
   const resetExpiredSession = useCallback(() => {
     activeSessionId.current = null;
     setSession(null);
@@ -189,7 +196,13 @@ export default function ChatWidget() {
     }>(`/api/chat/sessions/${currentSession.conversationId}/messages`, {
     });
     if (activeSessionId.current !== currentSession.conversationId) return;
-    setMessages(response.messages);
+    setMessages((current) => {
+      const next = response.messages;
+      return current.length === next.length && current.every((message, index) =>
+        message.id === next[index]?.id && message.body === next[index]?.body &&
+        message.sender_kind === next[index]?.sender_kind && message.created_at === next[index]?.created_at,
+      ) ? current : next;
+    });
     setMode(response.conversation.channel);
     setSession((existing) => {
       if (
@@ -225,11 +238,16 @@ export default function ChatWidget() {
       }
     };
 
-    void refresh();
-    const interval = window.setInterval(() => void refresh(), 5000);
+    let timeout: number | undefined;
+    const poll = async () => {
+      if (!active) return;
+      if (document.visibilityState === "visible") await refresh();
+      if (active) timeout = window.setTimeout(() => void poll(), 5000);
+    };
+    void poll();
     return () => {
       active = false;
-      window.clearInterval(interval);
+      if (timeout) window.clearTimeout(timeout);
     };
   }, [loadMessages, open, resetExpiredSession, session]);
 
@@ -440,7 +458,7 @@ export default function ChatWidget() {
             </div>
           ) : (
             <>
-              <div className="flex-1 space-y-4 overflow-y-auto bg-[#f8f7f4] p-4">
+              <div ref={messageListRef} className="flex-1 space-y-4 overflow-y-auto overscroll-contain scroll-smooth bg-[#f8f7f4] p-4 [scrollbar-gutter:stable]">
                 {messages.length === 0 && status === "ready" && (
                   <div className="rounded-2xl border border-white bg-white p-4 text-sm leading-6 text-neutral-600 shadow-sm">
                     {mode === "ai"

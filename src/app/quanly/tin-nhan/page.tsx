@@ -57,7 +57,12 @@ export default function StaffInboxPage() {
       const waitingDifference = Number(b.status === "waiting") - Number(a.status === "waiting");
       return waitingDifference || new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-    setConversations(rows);
+    setConversations((current) => current.length === rows.length && current.every((item, index) => {
+      const next = rows[index];
+      return item.id === next.id && item.status === next.status &&
+        item.assigned_staff_id === next.assigned_staff_id && item.created_at === next.created_at &&
+        item.channel === next.channel;
+    }) ? current : rows);
   }, []);
 
   const loadMessages = useCallback(async (conversationId: string) => {
@@ -70,7 +75,11 @@ export default function StaffInboxPage() {
 
     if (queryError) throw queryError;
     const rows = (data ?? []) as Message[];
-    setMessages(rows);
+    setMessages((current) => current.length === rows.length && current.every((item, index) => {
+      const next = rows[index];
+      return item.id === next.id && item.body === next.body && item.sender_kind === next.sender_kind &&
+        item.sender_user_id === next.sender_user_id && item.created_at === next.created_at;
+    }) ? current : rows);
     return rows;
   }, []);
 
@@ -118,18 +127,20 @@ export default function StaffInboxPage() {
     if (!authorized) return;
     let active = true;
 
+    let timeout: number | undefined;
     const refreshInbox = async () => {
       try {
-        await loadConversations();
+        if (document.visibilityState === "visible") await loadConversations();
       } catch {
         if (active) setError("Mất kết nối tới danh sách hội thoại. Đang thử cập nhật lại.");
       }
+      if (active) timeout = window.setTimeout(() => void refreshInbox(), 15_000);
     };
 
-    const interval = window.setInterval(() => void refreshInbox(), 5000);
+    timeout = window.setTimeout(() => void refreshInbox(), 15_000);
     return () => {
       active = false;
-      window.clearInterval(interval);
+      if (timeout) window.clearTimeout(timeout);
     };
   }, [authorized, loadConversations]);
 
@@ -138,9 +149,11 @@ export default function StaffInboxPage() {
   useEffect(() => {
     if (!authorized || !selectedConversationId) return;
     let active = true;
+    let timeout: number | undefined;
     const poll = async () => {
+      if (!active) return;
       try {
-        const [conversationResult, messagesResult] = await Promise.all([
+        const [conversationResult, messagesResult] = document.visibilityState === "visible" ? await Promise.all([
           supabase
             .from("chat_conversations")
             .select("id, channel, status, assigned_staff_id, created_at")
@@ -152,22 +165,35 @@ export default function StaffInboxPage() {
             .eq("conversation_id", selectedConversationId)
             .order("created_at", { ascending: true })
             .limit(200),
-        ]);
+        ]) : [null, null];
         if (!active) return;
-        if (conversationResult.error || messagesResult.error) {
-          throw conversationResult.error ?? messagesResult.error;
+        if (conversationResult?.error || messagesResult?.error) {
+          throw conversationResult?.error ?? messagesResult?.error;
         }
-        if (conversationResult.data) setSelected(conversationResult.data as Conversation);
-        if (messagesResult.data) setMessages(messagesResult.data as Message[]);
+        if (conversationResult?.data) {
+          const next = conversationResult.data as Conversation;
+          setSelected((current) => current && current.id === next.id && current.status === next.status &&
+            current.assigned_staff_id === next.assigned_staff_id && current.channel === next.channel &&
+            current.created_at === next.created_at ? current : next);
+        }
+        if (messagesResult?.data) {
+          const rows = messagesResult.data as Message[];
+          setMessages((current) => current.length === rows.length && current.every((item, index) => {
+            const next = rows[index];
+            return item.id === next.id && item.body === next.body && item.sender_kind === next.sender_kind &&
+              item.sender_user_id === next.sender_user_id && item.created_at === next.created_at;
+          }) ? current : rows);
+        }
       } catch {
         if (active) setError("Mất kết nối tới hộp thư. Đang thử cập nhật lại.");
       }
+      if (active) timeout = window.setTimeout(() => void poll(), 5_000);
     };
 
-    const interval = window.setInterval(() => void poll(), 5000);
+    void poll();
     return () => {
       active = false;
-      window.clearInterval(interval);
+      if (timeout) window.clearTimeout(timeout);
     };
   }, [authorized, selectedConversationId]);
 
